@@ -1,25 +1,16 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright 2019 Agata Les, All Rights Reserved.
 
 #include "TankPlayerController.h"
-#include "Tank.h"
-#include "Runtime/Engine/Classes/Engine/World.h"
-#include "Runtime/Engine/Classes/Engine/EngineTypes.h"
-
 #include "TankAimingComponent.h"
 
 void ATankPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-
-	ATank* PossesedTank = GetControlledTank();
-
-	if (PossesedTank)
+	
+	auto AimingComponent = GetPawn()->FindComponentByClass<UTankAimingComponent>();
+	if (ensure(AimingComponent))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Tank Player Controller possesing %s"), *PossesedTank->GetName());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Tank Player Controller active but not possesing a tank."));
+		FoundAimingComponent(AimingComponent);
 	}
 }
 
@@ -29,20 +20,18 @@ void ATankPlayerController::Tick(float DeltaTime)
 	AimTowardsCrosshair();
 }
 
-ATank* ATankPlayerController::GetControlledTank() const
-{
-	return Cast<ATank>(GetPawn());
-}
-
 void ATankPlayerController::AimTowardsCrosshair()
 {
-	if (!GetControlledTank()) return;
-
 	FVector HitLocation;
 
 	if (GetSightRayHitLocation(HitLocation))
 	{
-		Cast< UTankAimingComponent>( GetControlledTank()->GetComponentByClass(UTankAimingComponent::StaticClass()))->AimAt(HitLocation, GetControlledTank()->LaunchSpeed);
+		auto TankAimingComponent = GetPawn()->FindComponentByClass<UTankAimingComponent>();
+
+		if (ensure(TankAimingComponent))
+		{
+			TankAimingComponent->AimAt(HitLocation);
+		}
 	}
 }
 
