@@ -11,7 +11,18 @@ UTankAimingComponent::UTankAimingComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
+}
+
+void UTankAimingComponent::BeginPlay()
+{
+	Super::BeginPlay();
+	LastFireTime = FPlatformTime::Seconds();
+}
+
+EFiringStatus UTankAimingComponent::GetFiringStatus() const
+{
+	return FiringStatus;
 }
 
 void UTankAimingComponent::Initialize(UTankBarrel * BarrelToSet, UTankTurret * TurretToSet)
@@ -43,9 +54,33 @@ void UTankAimingComponent::AimAt(FVector HitLocation)
 
 	if (bIsLaunchVelocityFound)
 	{
-		auto AimDirection = OutLaunchVelocity.GetSafeNormal();
-		MoveBarrelTowards(AimDirection);
-		MoveTurretTowards(AimDirection);
+		AimDirectionSafeNormal = OutLaunchVelocity.GetSafeNormal();
+		MoveBarrelTowards(AimDirectionSafeNormal);
+		MoveTurretTowards(AimDirectionSafeNormal);
+	}
+}
+
+void UTankAimingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction * ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	bool IsReloaded = (FPlatformTime::Seconds() - LastFireTime) > ReloadTimeInSeconds;
+
+	if (AmmoQuantity <= 0)
+	{
+		FiringStatus = EFiringStatus::NoAmmo;
+	}
+	else if (!IsReloaded)
+	{
+		FiringStatus = EFiringStatus::Reloading;
+	}
+	else if(IsBarrelMoving())
+	{
+		FiringStatus = EFiringStatus::Aiming;
+	}
+	else
+	{
+		FiringStatus = EFiringStatus::Locked;
 	}
 }
 
@@ -64,15 +99,28 @@ void UTankAimingComponent::MoveTurretTowards(FVector AimDirection)
 	auto AimAsRotator = AimDirection.ToOrientationRotator();
 	auto DeltaRotator = AimAsRotator - TurretRotator;
 
+	if (DeltaRotator.Yaw > 180.0f) DeltaRotator.Yaw = -(360.0f - DeltaRotator.Yaw);
+	if (DeltaRotator.Yaw < -180.0f) DeltaRotator.Yaw = (360.0f + DeltaRotator.Yaw);
+
 	Turret->Rotate(DeltaRotator.Yaw);
+}
+
+bool UTankAimingComponent::IsBarrelMoving()
+{
+	if (!ensure(Barrel)) return false;
+
+	auto BarrelForwardVector = Barrel->GetForwardVector().GetSafeNormal();
+	float Tolerance = 0.1f; //TODO Check tolerance if acceptable
+
+	return !(BarrelForwardVector.Equals(AimDirectionSafeNormal, Tolerance));
 }
 
 void UTankAimingComponent::Fire()
 {
+	//if (AmmoQuantity <= 0) return;
 	if (!ensure(Barrel && ProjectileBlueprint)) return;
 
-	bool isReloaded = (FPlatformTime::Seconds() - LastFireTime > ReloadTimeInSeconds);
-	if (isReloaded)
+	if (FiringStatus == EFiringStatus::Locked || FiringStatus == EFiringStatus::Aiming)
 	{
 		AProjectile * Projectile = GetWorld()->SpawnActor<AProjectile>(
 			ProjectileBlueprint,
@@ -81,7 +129,10 @@ void UTankAimingComponent::Fire()
 			);
 
 		if (!ensure(Projectile)) return;
+
 		Projectile->LaunchProjectile(LaunchSpeed);
 		LastFireTime = FPlatformTime::Seconds();
+		AmmoQuantity--;
+	
 	}
 }

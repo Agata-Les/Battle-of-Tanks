@@ -12,7 +12,8 @@ enum class EFiringStatus : uint8
 {
 	Reloading,
 	Aiming,
-	Locked
+	Locked,
+	NoAmmo
 };
 
 class UTankBarrel;
@@ -27,6 +28,11 @@ class BATTLETANK_API UTankAimingComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UTankAimingComponent();
+
+	//BeginPlay
+	void BeginPlay() override;
+
+	EFiringStatus GetFiringStatus() const;
 
 	UFUNCTION(BlueprintCallable, Category = "Setup")
 	void Initialize(UTankBarrel * BarrelToSet, UTankTurret * TurretToSet);
@@ -43,14 +49,24 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "State")
 	EFiringStatus FiringStatus = EFiringStatus::Locked;
 
+	UPROPERTY(BlueprintReadOnly)
+	int AmmoQuantity = 3;
+
 private:
+	//Tick
+	void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
+
 	UTankBarrel * Barrel = nullptr;
 	UTankTurret * Turret = nullptr;
+
+	FVector AimDirectionSafeNormal;
 
 	void MoveBarrelTowards(FVector AimDirection);
 	void MoveTurretTowards(FVector AimDirection);
 
-	UPROPERTY(EditDefaultsOnly, Category = Firing, meta = (ClampMin = 2000.0f, ClampMax = 8000.0f))
+	bool IsBarrelMoving();
+
+	UPROPERTY(EditDefaultsOnly, Category = Firing)
 	float LaunchSpeed = 4000.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Firing)
