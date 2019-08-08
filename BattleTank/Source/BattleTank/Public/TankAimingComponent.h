@@ -49,9 +49,6 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "State")
 	EFiringStatus FiringStatus = EFiringStatus::Locked;
 
-	UPROPERTY(BlueprintReadOnly)
-	int AmmoQuantity = 3;
-
 private:
 	//Tick
 	void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
@@ -71,6 +68,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = Firing)
 	float ReloadTimeInSeconds = 3;
+
+	UPROPERTY(EditDefaultsOnly, Category = Firing)
+	int32 AmmoQuantity = 3;
 
 	double LastFireTime = 0.0;
 };
