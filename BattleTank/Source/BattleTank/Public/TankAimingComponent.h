@@ -64,13 +64,13 @@ private:
 	bool IsBarrelMoving();
 
 	UPROPERTY(EditDefaultsOnly, Category = Firing)
-	float LaunchSpeed = 4000.0f;
+	float LaunchSpeed = 20000.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Firing)
-	float ReloadTimeInSeconds = 3;
+	float ReloadTimeInSeconds = 2.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Firing)
-	int32 AmmoQuantity = 3;
+	int32 AmmoQuantity = 20;
 
 	double LastFireTime = 0.0;
 };

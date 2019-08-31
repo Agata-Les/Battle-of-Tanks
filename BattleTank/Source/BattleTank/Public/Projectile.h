@@ -7,6 +7,7 @@
 #include "Runtime/Engine/Classes/GameFramework/ProjectileMovementComponent.h"
 #include "Runtime/Engine/Classes/Particles/ParticleSystemComponent.h"
 #include "Runtime/Engine/Classes/Components/StaticMeshComponent.h"
+#include "Runtime/Engine/Classes/PhysicsEngine/RadialForceComponent.h"
 #include "Projectile.generated.h"
 
 UCLASS()
@@ -18,17 +19,31 @@ public:
 	// Sets default values for this actor's properties
 	AProjectile();
 
+	void BeginPlay() override;
 	void LaunchProjectile(float Speed);
+
+	UPROPERTY(EditDefaultsOnly)
+	float DestroyDelay = 5.0f;
 
 private:
 	UProjectileMovementComponent * ProjectileMovement = nullptr;
 
-	UPROPERTY(VIsibleAnywhere)
+	UFUNCTION()
+	void OnHit(UPrimitiveComponent * HitComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, FVector NormalImpulse, const FHitResult & Hit);
+
+	void TimerCallback();
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UParticleSystemComponent* LaunchBlast = nullptr; //TODO Getter 
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UParticleSystemComponent* ImpactBlast = nullptr; //TODO Getter 
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UStaticMeshComponent* CollisionMesh = nullptr;
 
-	UPROPERTY(VIsibleAnywhere)
-	UParticleSystemComponent* LaunchBlast = nullptr;
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	URadialForceComponent* ExplosionForce = nullptr;
 
-	UPROPERTY(VIsibleAnywhere)
-	UParticleSystemComponent* ImpactBlast = nullptr;
+	FTimerHandle DestroyTimeHandle;
 };

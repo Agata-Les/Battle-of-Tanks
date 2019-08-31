@@ -2,6 +2,29 @@
 
 #include "Projectile.h"
 
+void AProjectile::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	CollisionMesh->OnComponentHit.AddDynamic(this, &AProjectile::OnHit);
+}
+
+void AProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	LaunchBlast->Deactivate();
+	ImpactBlast->Activate();
+	ExplosionForce->FireImpulse();
+
+	CollisionMesh->DestroyComponent();
+
+	GetWorld()->GetTimerManager().SetTimer(DestroyTimeHandle, this, &AProjectile::TimerCallback, DestroyDelay);
+}
+
+void AProjectile::TimerCallback()
+{
+	this->Destroy();
+}
+
 // Sets default values
 AProjectile::AProjectile()
 {
@@ -21,6 +44,10 @@ AProjectile::AProjectile()
 	ImpactBlast = CreateDefaultSubobject<UParticleSystemComponent>(FName("Impact Blast"));
 	ImpactBlast->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform); //TODO use AttachToComponent
 	ImpactBlast->bAutoActivate = false;
+
+	ExplosionForce = CreateDefaultSubobject<URadialForceComponent>(FName("Explosion Force"));
+	ExplosionForce->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	ExplosionForce->bAutoActivate = true;
 }
 
 void AProjectile::LaunchProjectile(float Speed)
