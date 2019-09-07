@@ -19,6 +19,9 @@ public:
 	void BeginPlay() override;
 	void Tick(float DeltaTime) override;
 
+	UFUNCTION()
+	void OnTankDeath();
+
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Setup")
 	float AcceptanceRadius = 2000.0f;
@@ -26,6 +29,9 @@ protected:
 private:
 	APawn * PlayerTank = nullptr;
 	APawn * PossesedTank = nullptr;
+
+	//Method called when possessing a pawn
+	virtual void SetPawn(APawn* InPawn) override;
 
 	UTankAimingComponent * PossesedTankAimingComponent = nullptr;
 };
